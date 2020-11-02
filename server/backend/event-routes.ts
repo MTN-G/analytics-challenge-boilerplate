@@ -4,11 +4,12 @@ import express from "express";
 import { Request, Response } from "express";
 
 // some useful database functions in here:
-import {getAllEvents
-} from "./database";
+import {getAllEvents, createEvent} from "./database";
 import { Event, weeklyRetentionObject } from "../../client/src/models/event";
 import { ensureAuthenticated, validateMiddleware } from "./helpers";
 import {OneDay,OneHour,OneWeek} from './timeFrames'
+import { v4 } from "uuid";
+import shortid from "shortid";
 
 import {
   shortIdValidation,
@@ -20,6 +21,7 @@ import { filter } from "bluebird";
 import { fileURLToPath } from "url";
 import { FileWatcherEventKind } from "typescript";
 import { type } from "os";
+import { session } from "passport";
 const router = express.Router();
 
 // Routes
@@ -35,15 +37,13 @@ interface Filter {
 type ByDay = {
   date: string;
   count: number; 
+  session_id?: string[];
 }
-
-
-router.post("/", (req, res) => {
-  const eventDetails : Event = req.body;
-  res.status(201);
-  res.json({ event: eventDetails });
-});
-
+type ByHour = {
+  hour: string;
+  count: number; 
+  sessions?: string[];
+}
 
 router.get('/all', (req: Request, res: Response) => {
   const allEvents : Event[] = getAllEvents()
@@ -54,7 +54,6 @@ router.get('/all', (req: Request, res: Response) => {
 router.get('/all-filtered', (req: Request, res: Response) => {
   let allEvents : Event[] = getAllEvents()
   const filters: Filter = req.query;
-  console.log(filters)
   switch (filters.sorting) {
     case '-date':
       allEvents = allEvents.sort((a, b) => b.date -a.date);
@@ -64,47 +63,79 @@ router.get('/all-filtered', (req: Request, res: Response) => {
       break;
       default:
         break;
-      }
-      if (filters.type) allEvents = allEvents.filter(event => event.name === filters.type);
-      if (filters.browser) allEvents = allEvents.filter(event => event.browser == filters.browser);
-      if (filters.search) allEvents = allEvents.filter(event => event.session_id.includes(filters.search));
-      let more = false
-      if (filters.offset < allEvents.length) {
-        more = true; 
-        allEvents = allEvents.slice(0, filters.offset);
-      }
-      res.send(
-        {
-          events: allEvents,
-          more
-        });
-      });
+  }
+  if (filters.type) allEvents = allEvents.filter(event => event.name === filters.type);
+  if (filters.browser) allEvents = allEvents.filter(event => event.browser == filters.browser);
+  if (filters.search) allEvents = allEvents.filter(event => event.session_id.includes(filters.search));
+  let more = false
+  if (filters.offset < allEvents.length) {
+    more = true; 
+    allEvents = allEvents.slice(0, filters.offset);
+  }
+  res.send(
+    {
+      events: allEvents,
+      more
+    });
+});
       
-      router.get('/by-days/:offset', (req: Request, res: Response) => {
-        let allEvents : Event[] = getAllEvents();
-        const daysBack: number = parseInt(req.params.offset)
-        const today: number = new Date (new Date().toDateString()).getTime()
-        const lastDay : number = today - ( daysBack * OneDay)
-        const firstDay : number = lastDay - OneWeek
-        allEvents = allEvents.filter(event => event.date >= firstDay && event.date <= lastDay)
-        console.log(lastDay, firstDay)
-        const response: ByDay[] = []
-        allEvents.forEach(event => {
-          let date = new Date(event.date).toDateString().slice(0, 10)
-          const dateIsExist = response.find(e => e.date === date)
-          if (!dateIsExist) response.push({
-            date,
-            count: 1
-          }) 
-          else {
-            dateIsExist.count += 1
-          }
-        })
-        res.send(response)
-      });
+router.get('/by-days/:offset', (req: Request, res: Response) => {
+  let allEvents : Event[] = getAllEvents();
+
+  const daysBack: number = parseInt(req.params.offset);
+  const today: number = new Date (new Date().setHours(23, 59, 59, 9)).getTime()
+  const lastDay : number =  today - ( daysBack * OneDay);
+  const firstDay : number = (lastDay - OneWeek)
+
+  allEvents = allEvents.filter(event => event.date >= firstDay && event.date <= lastDay);
+
+  const response: ByDay[] = [];
+  
+  allEvents.forEach(event => {
+    let date = new Date(event.date).toLocaleDateString()
+    const dateIsExist = response.find(e => e.date === date);
+    if (!dateIsExist) response.push({
+      date,
+      count: 1,
+      session_id: [event.session_id]
+    });
+    if (dateIsExist && !dateIsExist.session_id?.some(e => e === event.session_id)) {
+          dateIsExist.session_id?.push(event.session_id)
+          dateIsExist.count += 1
+    };
+  });
+  response.map(obj => delete obj.session_id);
+  res.send(response)
+});
           
 router.get('/by-hours/:offset', (req: Request, res: Response) => {
-  res.send('/by-hours/:offset')
+  let allEvents : Event[] = getAllEvents();
+
+  const daysBack: number = parseInt(req.params.offset);
+  const today: number = new Date (new Date().setHours(23, 59, 59, 9)).getTime();
+  const offsetDay = today - (daysBack * OneDay)
+  const response : ByHour[] = []
+  for (let i = 0; i < 24; i++) {
+    response.push({
+      hour: `0${i}:00`.slice(-5),
+      count: 0,
+      sessions: []
+    });
+  };
+
+  allEvents.forEach(event => {
+    const difference: number = event.date - (offsetDay - OneDay);
+    if (difference < OneDay && difference > 0) {
+      const hour: number = new Date(difference).getHours();
+      const relevantHour: ByHour = response[hour];
+      if (!relevantHour.sessions?.some(e => e === event.session_id)) {
+        relevantHour.sessions?.push(event.session_id);
+        relevantHour.count += 1;
+      ;}   
+    };
+  });
+  response.map(obj => delete obj.sessions);
+  res.send(response)
 });
 
 router.get('/today', (req: Request, res: Response) => {
@@ -123,9 +154,10 @@ router.get('/:eventId',(req : Request, res : Response) => {
   res.send('/:eventId')
 });
 
-// router.post('/', (req: Request, res: Response) => {
-//   res.send('/')
-// });
+router.post('/', (req: Request, res: Response) => {
+  createEvent(req.body)
+  res.send('created')
+});
 
 router.get('/chart/os/:time',(req: Request, res: Response) => {
   res.send('/chart/os/:time')
