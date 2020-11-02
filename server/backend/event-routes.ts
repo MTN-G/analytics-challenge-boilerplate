@@ -4,7 +4,7 @@ import express from "express";
 import { Request, Response } from "express";
 
 // some useful database functions in here:
-import {
+import {getAllEvents
 } from "./database";
 import { Event, weeklyRetentionObject } from "../../client/src/models/event";
 import { ensureAuthenticated, validateMiddleware } from "./helpers";
@@ -15,6 +15,9 @@ import {
   userFieldsValidator,
   isUserValidator,
 } from "./validators";
+import { filter } from "bluebird";
+import { fileURLToPath } from "url";
+import { FileWatcherEventKind } from "typescript";
 const router = express.Router();
 
 // Routes
@@ -27,13 +30,47 @@ interface Filter {
   offset: number;
 }
 
+router.post("/", (req, res) => {
+  const eventDetails : Event = req.body;
+  res.status(201);
+  res.json({ event: eventDetails });
+});
+
+
 router.get('/all', (req: Request, res: Response) => {
-  res.send('/all')
+    const allEvents : Event[] = getAllEvents()
+  res.send(allEvents)
     
 });
 
 router.get('/all-filtered', (req: Request, res: Response) => {
-  res.send('/all-filtered')
+  let allEvents : Event[] = getAllEvents()
+  const filters: Filter = req.query;
+  console.log(filters)
+  switch (filters.sorting) {
+    case '+date':
+      allEvents = allEvents.sort(function(a, b){return b.date -a.date});
+      break;
+    case '-date': 
+      allEvents = allEvents.sort(function(a, b){return b.date -a.date}).reverse();
+      break;
+    default:
+      res.status(400).json({message: 'sorting filter must be included'});
+      break;
+  }
+  if (filters.type) allEvents = allEvents.filter(event => event.name === filters.type);
+  if (filters.browser) allEvents = allEvents.filter(event => event.browser == filters.browser);
+  if (filters.search) allEvents = allEvents.filter(event => Object.values(event).includes(filters.search));
+  let more = false
+  if (filters.offset < allEvents.length) {
+      more = true; 
+      allEvents = allEvents.slice(0, filters.offset);
+  }
+  res.send(
+    {
+      events: allEvents,
+      more
+    });
 });
 
 router.get('/by-days/:offset', (req: Request, res: Response) => {
@@ -60,9 +97,9 @@ router.get('/:eventId',(req : Request, res : Response) => {
   res.send('/:eventId')
 });
 
-router.post('/', (req: Request, res: Response) => {
-  res.send('/')
-});
+// router.post('/', (req: Request, res: Response) => {
+//   res.send('/')
+// });
 
 router.get('/chart/os/:time',(req: Request, res: Response) => {
   res.send('/chart/os/:time')

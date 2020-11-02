@@ -109,6 +109,7 @@ export const seedDatabase = () => {
 };
 
 export const getAllUsers = () => db.get(USER_TABLE).value();
+export const getAllEvents = () => db.get(EVENT_TABLE).value();
 
 export const getAllPublicTransactions = () =>
   db.get(TRANSACTION_TABLE).filter({ privacyLevel: DefaultPrivacyLevel.public }).value();
@@ -206,6 +207,33 @@ export const createUser = (userDetails: Partial<User>): User => {
 
 const saveUser = (user: User) => {
   db.get(USER_TABLE).push(user).write();
+};
+
+// export const createEvent = (eventDetails: Partial<Event>): Event => {
+//   const event: Event = {
+//     _id: "RVI5rlc3xWC",
+//     session_id: "f7f5c32c-2183-4974-9fce-04fce30422fb",
+//     name: eventDetails.name!
+//     distinct_user_id: "101240",
+//     referred: "Friend",
+//     time: 148424876659,
+//     date: 1537951300035,
+//     os: "Android",
+//     browser: "mozilla",
+//     geolocation: {
+//       location: {
+//         lat: -79,
+//         lng: 164
+//       },
+//       accuracy: 449
+//     }
+//   };
+//   saveUser(user);
+//   return user;
+// };
+
+const saveEvent = (event: Event) => {
+  db.get(EVENT_TABLE).push(event).write();
 };
 
 export const updateUserById = (userId: string, edits: Partial<User>) => {
