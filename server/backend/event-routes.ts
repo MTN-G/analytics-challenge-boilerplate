@@ -8,6 +8,7 @@ import {getAllEvents
 } from "./database";
 import { Event, weeklyRetentionObject } from "../../client/src/models/event";
 import { ensureAuthenticated, validateMiddleware } from "./helpers";
+import {OneDay,OneHour,OneWeek} from './timeFrames'
 
 import {
   shortIdValidation,
@@ -18,6 +19,7 @@ import {
 import { filter } from "bluebird";
 import { fileURLToPath } from "url";
 import { FileWatcherEventKind } from "typescript";
+import { type } from "os";
 const router = express.Router();
 
 // Routes
@@ -30,6 +32,12 @@ interface Filter {
   offset: number;
 }
 
+type ByDay = {
+  date: string;
+  count: number; 
+}
+
+
 router.post("/", (req, res) => {
   const eventDetails : Event = req.body;
   res.status(201);
@@ -38,9 +46,9 @@ router.post("/", (req, res) => {
 
 
 router.get('/all', (req: Request, res: Response) => {
-    const allEvents : Event[] = getAllEvents()
+  const allEvents : Event[] = getAllEvents()
   res.send(allEvents)
-    
+  
 });
 
 router.get('/all-filtered', (req: Request, res: Response) => {
@@ -48,35 +56,53 @@ router.get('/all-filtered', (req: Request, res: Response) => {
   const filters: Filter = req.query;
   console.log(filters)
   switch (filters.sorting) {
-    case '+date':
-      allEvents = allEvents.sort(function(a, b){return b.date -a.date});
+    case '-date':
+      allEvents = allEvents.sort((a, b) => b.date -a.date);
       break;
-    case '-date': 
-      allEvents = allEvents.sort(function(a, b){return b.date -a.date}).reverse();
+      case '+date': 
+      allEvents = allEvents.sort((a, b) => b.date -a.date).reverse();
       break;
-    default:
-      res.status(400).json({message: 'sorting filter must be included'});
-      break;
-  }
-  if (filters.type) allEvents = allEvents.filter(event => event.name === filters.type);
-  if (filters.browser) allEvents = allEvents.filter(event => event.browser == filters.browser);
-  if (filters.search) allEvents = allEvents.filter(event => Object.values(event).includes(filters.search));
-  let more = false
-  if (filters.offset < allEvents.length) {
-      more = true; 
-      allEvents = allEvents.slice(0, filters.offset);
-  }
-  res.send(
-    {
-      events: allEvents,
-      more
-    });
-});
-
-router.get('/by-days/:offset', (req: Request, res: Response) => {
-  res.send('/by-days/:offset')
-});
-
+      default:
+        break;
+      }
+      if (filters.type) allEvents = allEvents.filter(event => event.name === filters.type);
+      if (filters.browser) allEvents = allEvents.filter(event => event.browser == filters.browser);
+      if (filters.search) allEvents = allEvents.filter(event => event.session_id.includes(filters.search));
+      let more = false
+      if (filters.offset < allEvents.length) {
+        more = true; 
+        allEvents = allEvents.slice(0, filters.offset);
+      }
+      res.send(
+        {
+          events: allEvents,
+          more
+        });
+      });
+      
+      router.get('/by-days/:offset', (req: Request, res: Response) => {
+        let allEvents : Event[] = getAllEvents();
+        const daysBack: number = parseInt(req.params.offset)
+        const today: number = new Date (new Date().toDateString()).getTime()
+        const lastDay : number = today - ( daysBack * OneDay)
+        const firstDay : number = lastDay - OneWeek
+        allEvents = allEvents.filter(event => event.date >= firstDay && event.date <= lastDay)
+        console.log(lastDay, firstDay)
+        const response: ByDay[] = []
+        allEvents.forEach(event => {
+          let date = new Date(event.date).toDateString().slice(0, 10)
+          const dateIsExist = response.find(e => e.date === date)
+          if (!dateIsExist) response.push({
+            date,
+            count: 1
+          }) 
+          else {
+            dateIsExist.count += 1
+          }
+        })
+        res.send(response)
+      });
+          
 router.get('/by-hours/:offset', (req: Request, res: Response) => {
   res.send('/by-hours/:offset')
 });
