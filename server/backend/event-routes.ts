@@ -4,24 +4,18 @@ import express from "express";
 import { Request, Response } from "express";
 
 // some useful database functions in here:
-import {getAllEvents, createEvent} from "./database";
+import { getAllEvents, createEvent } from "./database";
 import { Event, weeklyRetentionObject } from "../../client/src/models/event";
-import { ensureAuthenticated, validateMiddleware } from "./helpers";
-import {OneDay,OneHour,OneWeek} from './timeFrames'
-import { v4 } from "uuid";
-import shortid from "shortid";
+import { OneDay, OneWeek } from './timeFrames'
 
-import {
-  shortIdValidation,
-  searchValidation,
-  userFieldsValidator,
-  isUserValidator,
-} from "./validators";
+import { ensureAuthenticated, validateMiddleware, AdminValidation} from "./helpers";
+import { shortIdValidation, searchValidation, userFieldsValidator, isUserValidator } from "./validators";
 import { filter } from "bluebird";
 import { fileURLToPath } from "url";
 import { FileWatcherEventKind } from "typescript";
 import { type } from "os";
 import { session } from "passport";
+
 const router = express.Router();
 
 // Routes
@@ -66,7 +60,10 @@ router.get('/all-filtered', (req: Request, res: Response) => {
   }
   if (filters.type) allEvents = allEvents.filter(event => event.name === filters.type);
   if (filters.browser) allEvents = allEvents.filter(event => event.browser == filters.browser);
-  if (filters.search) allEvents = allEvents.filter(event => event.session_id.includes(filters.search));
+  if (filters.search) allEvents = allEvents.filter((event: object) => {
+    const values: string[] = Object.values(event).filter(key => typeof key === 'string')
+    return values.some((value: string) => value.includes(filters.search))
+  })
   let more = false
   if (filters.offset < allEvents.length) {
     more = true; 
@@ -92,7 +89,7 @@ router.get('/by-days/:offset', (req: Request, res: Response) => {
   const response: ByDay[] = [];
   
   allEvents.forEach(event => {
-    let date = new Date(event.date).toLocaleDateString()
+    let date = new Date(event.date).toLocaleDateString().slice(0, 10)
     const dateIsExist = response.find(e => e.date === date);
     if (!dateIsExist) response.push({
       date,
@@ -152,7 +149,6 @@ router.get('/retention', (req: Request, res: Response) => {
   const today: number = new Date (new Date().setHours(23, 59, 59, 9)).getTime();
   const difference: number = today - dayZero;
   const numberOfWeeks: number = Math.ceil(difference / OneWeek)
-  console.log(dayZero, today, difference)
   const eventByWeek: Event[][] = []
   const userIdByWeek: string[][] = []
   const response: weeklyRetentionObject[] = [];
@@ -175,28 +171,28 @@ router.get('/retention', (req: Request, res: Response) => {
       registrationWeek: i + 1,
       newUsers,
       weeklyRetention: [],
-      start: new Date(weekStart).toLocaleString(),
-      end: new Date(weekEnd).toLocaleString()
+      start: new Date(weekStart).toLocaleString().slice(0, 10),
+      end: new Date(weekEnd).toLocaleString().slice(0, 10)
     });
-
-  }
-  
+  };
   response.forEach((obj, index) => {
+
     for (let i = index; i < numberOfWeeks; i++) {
-      const weeklyLoginEvents: Event[] = eventByWeek[i]
-        .filter(event => 
+
+      const weeklyLoginEvents: Event[] = eventByWeek[i].filter(event => 
           (event.name === "login" || event.name === "signup") && 
-          userIdByWeek[index].some(userId => event.distinct_user_id === userId))
-      const validationArray: Event[] = []
+          userIdByWeek[index].includes(event.distinct_user_id));
+
+      const noDuplicate: Event[] = [];
+
       weeklyLoginEvents.forEach(event => {
-        validationArray.some(e => e.distinct_user_id === event.distinct_user_id) ?
-        null : validationArray.push(event)
-      })
-      obj.weeklyRetention.push(Math.round((validationArray.length / userIdByWeek[index].length ) * 100))
+        noDuplicate.some(e => e.distinct_user_id === event.distinct_user_id) ?
+          null : noDuplicate.push(event)
+      });
+      obj.weeklyRetention.push(Math.round((noDuplicate.length / userIdByWeek[index].length ) * 100));
     }
   })
-  
-  res.send(response)
+  res.send(response);
 });
 
 router.get('/:eventId',(req : Request, res : Response) => {
@@ -227,14 +223,3 @@ router.get('/chart/geolocation/:time',(req: Request, res: Response) => {
 
 
 export default router;
-// response.forEach(obj => {
-//     for (let i = 0; i < obj.registrationWeek; i++) {
-//       const weeklyLoginEvents: number = eventByWeek[i]
-//       .filter(event => 
-//         (event.name === "login" || event.name === "signup") &&
-//         userIdByWeek[obj.registrationWeek - 1].some(userId => event.distinct_user_id === userId))
-//       .length
-//       const percents: number = (weeklyLoginEvents / userIdByWeek[obj.registrationWeek - 1].length ) * 100
-//       obj.weeklyRetention.push(percents)
-//     } 
-//   })

@@ -1,6 +1,7 @@
 import React from "react";
 import { Interpreter } from "xstate";
 import { AuthMachineContext, AuthMachineEvents } from "../machines/authMachine";
+import MapChart from '../adminCharts/mapChart'
 
 export interface Props {
   authService: Interpreter<AuthMachineContext, any, AuthMachineEvents, any>;
@@ -9,6 +10,7 @@ export interface Props {
 const DashBoard: React.FC = () => {
   return (
     <>
+      <MapChart/>
     </>
   );
 };

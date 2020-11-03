@@ -17865,7 +17865,8 @@
       "defaultPrivacyLevel": "contacts",
       "balance": 46533,
       "createdAt": "2020-10-06T13:15:13.053Z",
-      "modifiedAt": "2020-10-29T14:35:33.617Z"
+      "modifiedAt": "2020-10-29T14:35:33.617Z",
+      "isAdmin": true
     },
     {
       "id": "ILMcLjORs9",
