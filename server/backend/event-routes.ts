@@ -85,7 +85,7 @@ router.get('/by-days/:offset', (req: Request, res: Response) => {
   const firstDay : number = (lastDay - OneWeek)
 
   allEvents = allEvents.filter(event => event.date >= firstDay && event.date <= lastDay);
-
+  allEvents.sort((a, b) => a.date - b.date)
   const response: ByDay[] = [];
   
   allEvents.forEach(event => {

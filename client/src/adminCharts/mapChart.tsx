@@ -28,7 +28,6 @@ const MapChart: React.FC = () => {
         getEvents()
     },[])
   
-   console.log(markersPosition)
     const containerStyle = {
         width: '800px',
         height: '400px'
