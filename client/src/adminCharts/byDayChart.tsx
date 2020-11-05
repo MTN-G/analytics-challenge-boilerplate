@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip} from "recharts";
-import { Event, Location, eventName } from '../models/event'
 import TextField from '@material-ui/core/TextField';
 
 const OneHour: number = 1000 * 60 * 60; 
 const OneDay: number = OneHour * 24
-const OneWeek: number = OneDay*7
 
 type ByDayData = {
     count: number,
@@ -34,28 +32,34 @@ const ByDayChart: React.FC = () => {
     }
 
     data.map(day => {
-        day.date = day.date.slice(-5).replace('-', '/')
+        day.date = day.date.split('-').reverse().join().replaceAll(',', '/').slice(0 , 8);
+        if (day.date[4] === '/') day.date = day.date.slice(0 , 7);
+        
     })
-  
+
   return (
    <>
-    <TextField
-            id="date"
-            label="Birthday"
-            type="date"
-            onChange={e => handleChange(new Date(e.target.value))}
-            defaultValue={new Date()}
-            InputLabelProps={{
-            shrink: true,
-            }}
-     />
-     <LineChart width={700} height={300} data={data}>
+   {data[0] && <div>
+        <p>{`Total events per day between ${data[0].date} to ${data[6].date}`}</p>
+        <TextField
+                id="date"
+                label="Week ago From:"
+                type="date"
+                onChange={e => handleChange(new Date(e.target.value))}
+                defaultValue={new Date()}
+                InputLabelProps={{
+                shrink: true,
+                }}
+        />
+            </div>}
+     <LineChart width={750} height={300} data={data}>
         <Line type="monotone" dataKey="count"  stroke="#8884d8" />
         <Tooltip/>
         <CartesianGrid stroke="#ccc" />
         <XAxis dataKey="date" />
-        <YAxis />
+        <YAxis/>
     </LineChart>
+    
    </>
   );
 };

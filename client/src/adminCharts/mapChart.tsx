@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { GoogleMap, LoadScript, Marker, MarkerClusterer} from '@react-google-maps/api';
-import axios from 'axios';
 import { Event, Location, eventName } from '../models/event'
 
 type EventObject = {
@@ -9,24 +8,20 @@ type EventObject = {
     geoLoaction: Location
 };
 
-const MapChart: React.FC = () => {
+const MapChart: React.FC<{events: Event[]}>= ({events}) => {
 
     const [markersPosition, setMarkersPostion] = useState<EventObject[]>([]);
 
     useEffect(() => {
-        async function getEvents () {
-            const { data } = await axios.get('http://localhost:3001/events/all')
-            const eventsList : EventObject[] = data.map((obj: Event) : EventObject => {
-                    return {
-                        name: obj.name,
-                        date: obj.date,
-                        geoLoaction: obj.geolocation.location
-                    }
-                })
-            setMarkersPostion(eventsList)     
-        }
-        getEvents()
-    },[])
+        const eventsList : EventObject[] = events.map((obj: Event) : EventObject => {
+                return {
+                    name: obj.name,
+                    date: obj.date,
+                    geoLoaction: obj.geolocation.location
+                }
+            })
+        setMarkersPostion(eventsList)     
+    },[events])
   
     const containerStyle = {
         width: '800px',

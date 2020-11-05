@@ -52,11 +52,11 @@ router.get('/all-filtered', (req: Request, res: Response) => {
     case '-date':
       allEvents = allEvents.sort((a, b) => b.date -a.date);
       break;
-      case '+date': 
+    case '+date': 
       allEvents = allEvents.sort((a, b) => b.date -a.date).reverse();
       break;
-      default:
-        break;
+    default:
+      break;
   }
   if (filters.type) allEvents = allEvents.filter(event => event.name === filters.type);
   if (filters.browser) allEvents = allEvents.filter(event => event.browser == filters.browser);
