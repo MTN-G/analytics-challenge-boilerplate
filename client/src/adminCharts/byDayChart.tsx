@@ -52,7 +52,7 @@ const ByDayChart: React.FC = () => {
                 }}
         />
             </div>}
-     <LineChart width={750} height={300} data={data}>
+     <LineChart width={750} height={300} data={data} >
         <Line type="monotone" dataKey="count"  stroke="#8884d8" />
         <Tooltip/>
         <CartesianGrid stroke="#ccc" />

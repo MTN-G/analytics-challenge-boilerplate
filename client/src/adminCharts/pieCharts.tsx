@@ -40,7 +40,7 @@ const PieCharts: React.FC<{events: Event[]}> = ({events}) => {
         <PieChart width={420} height={360}>
             <Pie dataKey='value' nameKey='name' data={data} cx={200} cy={200} outerRadius={100} fill="#8884d8" label={true}>
             {
-                data.map((entry, index) => { console.log(entry);return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />})
+                data.map((cell, index) => <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />)
             }
             
             </Pie>
