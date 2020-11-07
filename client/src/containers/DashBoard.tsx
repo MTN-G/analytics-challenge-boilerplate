@@ -6,9 +6,9 @@ import ByDayChart from '../adminCharts/byDayChart'
 import ByHourChart from "adminCharts/byHourChart";
 import PieCharts from "adminCharts/pieCharts";
 import FilterChart from 'adminCharts/filterChart'
+import RetentinTable from "adminCharts/retention/retentionTable";
 import axios from 'axios'
 import { Event } from '../models/event'
-import { FormatAlignCenter } from "@material-ui/icons";
 
 export interface Props {
   authService: Interpreter<AuthMachineContext, any, AuthMachineEvents, any>;
@@ -29,6 +29,7 @@ const DashBoard: React.FC = () => {
 
   return (
     <div style={{display: "flex", flexDirection: "column", gap: "50px", alignItems: "center"}}>
+      <RetentinTable/>
       <FilterChart/>
       <PieCharts events={data}/>
       <MapChart events={data}/>
