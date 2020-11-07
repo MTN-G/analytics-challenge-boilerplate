@@ -39,8 +39,8 @@ const ByDayChart: React.FC = () => {
 
   return (
    <>
-   {data[0] && <div>
-        <p>{`Total events per day between ${data[0].date} to ${data[6].date}`}</p>
+    <div>
+        <p>{data[6] && `Total events per day between ${data[0].date} to ${data[6].date}`}</p>
         <TextField
                 id="date"
                 label="Week ago From:"
@@ -51,7 +51,7 @@ const ByDayChart: React.FC = () => {
                 shrink: true,
                 }}
         />
-            </div>}
+            </div>
      <LineChart width={750} height={300} data={data} >
         <Line type="monotone" dataKey="count"  stroke="#8884d8" />
         <Tooltip/>

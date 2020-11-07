@@ -35,7 +35,7 @@ const ByHourChart: React.FC = () => {
    <>
     <TextField
         id="date"
-        label="Birthday"
+        label="Pick Day"
         type="date"
         onChange={e => handleChange(new Date(e.target.value))}
         defaultValue={new Date()}
