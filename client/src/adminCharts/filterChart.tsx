@@ -16,7 +16,7 @@ const styleEventDiv = {
     padding: 8
 }
 
-type sorting = "%2Bdate" | "-date"
+type sorting = "+date" | "-date"
 
 const FilterChart: React.FC = () => {
     const [sorting, setSorting] = useState<sorting>("-date")
@@ -26,17 +26,18 @@ const FilterChart: React.FC = () => {
     const [offset, setOffset] = useState<number>(10)
     const [data, setData] = useState<{events: Event[], more: boolean}>({events: [], more: true})
 
-
     useEffect(() => {
-        let url = `http://localhost:3001/events/all-filtered?sorting=${sorting}&offset=${offset}`;
-        if (type !== undefined) url = url + `&type=${type}`;
-        if (browser !== undefined) url = url + `&browser=${browser}`;
-        if (search !== undefined) url = url + `&search=${search}`
         async function getEventsByDays () {
-            const {data} = await axios.get(url)
+            const {data} = await axios.get(`http://localhost:3001/events/all-filtered`, {
+                params: {
+                  sorting: sorting,
+                  offset,
+                  type,
+                  browser,
+                  search
+                }})
             setData(data)  
         }
-        console.log(url)
         getEventsByDays()
     },[sorting, type, browser, search, offset])
 
@@ -106,7 +107,7 @@ const FilterChart: React.FC = () => {
             label="descends by date"
             />
             <FormControlLabel
-            value="%2Bdate"
+            value="+date"
             control={<Radio color="primary" onChange={e => handleChange(e , setSorting)} />}
             label="ascending by date"
             /> 
