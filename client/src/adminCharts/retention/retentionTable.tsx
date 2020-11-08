@@ -10,8 +10,6 @@ export const OneWeek: number = OneDay*7
 const today = new Date (new Date().toDateString()).getTime()+6*OneHour
 const initialDayZero = today-5*OneWeek
 
-type sorting = "%2Bdate" | "-date"
-
 const RetentinTable: React.FC = () => {
     const [retention, setRetention] = useState<weeklyRetentionObject[]>([])
     const [dayZero, setdayZero] = useState<number>(initialDayZero)
@@ -33,9 +31,9 @@ const RetentinTable: React.FC = () => {
 
     retention.map(obj => {
         obj.start = obj.start.split('-').reverse().join().replaceAll(',', '/').slice(0 , 8);
-        if (obj.start[4] === '/') obj.start = obj.start.slice(0 , 7);
+        if (obj.start[4] === '/') obj.start = "0" + obj.start.slice(0 , 7);
         obj.end = obj.end.split('-').reverse().join().replaceAll(',', '/').slice(0 , 8);
-        if (obj.end[4] === '/') obj.end = obj.end.slice(0 , 7);
+        if (obj.end[4] === '/') obj.end = "0" + obj.end.slice(0 , 7);
     })
 
 

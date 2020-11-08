@@ -7,10 +7,10 @@ type PieChartData = {
     value: number
 }
 
-function createPieChartData (data: any[], newData: any[], key: string) {
+function createPieChartData (data: any[], newData: PieChartData[], key: string) {
     data.forEach((event: any) => {
-        if (newData.some((obj: any) => obj.name === event[key])) {
-            newData.map((obj: any) => {
+        if (newData.some((obj: PieChartData) => obj.name === event[key])) {
+            newData.map((obj: PieChartData) => {
                 if (obj.name === event[key]) obj.value++
             })
         } else newData.push({name: event[key], value: 1})
@@ -23,11 +23,11 @@ const PieCharts: React.FC<{events: Event[]}> = ({events}) => {
 
     useEffect(() => {
         const dataByPageName: PieChartData[] = [];
-        createPieChartData(events, dataByPageName, 'name')
-        const dataByOs: PieChartData[] = []
-        createPieChartData(events, dataByOs, 'os')
+        const dataByOs: PieChartData[] = [];
         const dataByBrowser: PieChartData[] = [];
-        createPieChartData(events, dataByBrowser, 'browser')
+        createPieChartData(events, dataByPageName, 'name');
+        createPieChartData(events, dataByOs, 'os');
+        createPieChartData(events, dataByBrowser, 'browser');
         
         setData([dataByPageName, dataByOs, dataByBrowser])
     },[events])
@@ -36,13 +36,12 @@ const PieCharts: React.FC<{events: Event[]}> = ({events}) => {
 
   return (
    <div style={{display: "flex"}}>
-    {data.map(data => 
+    {data.map((data: PieChartData[], index: number) => 
         <PieChart width={420} height={360}>
             <Pie dataKey='value' nameKey='name' data={data} cx={200} cy={200} outerRadius={100} fill="#8884d8" label={true}>
             {
-                data.map((cell, index) => <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />)
+                data.map((cell: PieChartData, index: number) => <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />)
             }
-            
             </Pie>
             <Legend/>
         </PieChart>
