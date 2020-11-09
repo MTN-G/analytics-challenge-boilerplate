@@ -18,8 +18,8 @@ const ByHourChart: React.FC = () => {
 
     useEffect(() => {
         async function getEventsByHours () {
-            const { data } = await axios.get(`http://localhost:3001/events/by-hours/${daysBack}`)
-            setData(data)   
+            const response: ByHourData[] = await (await axios.get(`http://localhost:3001/events/by-hours/${daysBack}`)).data;
+            setData(response); 
         }
         getEventsByHours()
     },[daysBack])

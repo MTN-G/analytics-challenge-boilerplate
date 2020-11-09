@@ -4,38 +4,37 @@ import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip} from "recharts";
 import TextField from '@material-ui/core/TextField';
 
 const OneHour: number = 1000 * 60 * 60; 
-const OneDay: number = OneHour * 24
+const OneDay: number = OneHour * 24;
 
 type ByDayData = {
     count: number,
     date: string
-}
+};
 
 const ByDayChart: React.FC = () => {
 
-    const [day, setDay] = useState<number>(7)
-    const [data, setData] = useState<ByDayData[]>([])
+    const [day, setDay] = useState<number>(7);
+    const [data, setData] = useState<ByDayData[]>([]);
 
     useEffect(() => {
         async function getEventsByDays () {
-            const { data }  = await axios.get(`http://localhost:3001/events/by-days/${day}`)
-            setData(data)  
+            const response: ByDayData[]  = await (await axios.get(`http://localhost:3001/events/by-days/${day}`)).data;
+            setData(response); 
         }
-        getEventsByDays()
-    },[day])
+        getEventsByDays();
+    },[day]);
     
     const handleChange = (date: Date) => {
         const msDate = date.getTime();
         const today = Date.now();
-        const daysBack  = Math.floor((today - msDate) / OneDay )
-        setDay(daysBack)
+        const daysBack  = Math.floor((today - msDate) / OneDay );
+        setDay(daysBack);
     }
 
     data.map(day => {
         day.date = day.date.split('-').reverse().join().replaceAll(',', '/').slice(0 , 8);
         if (day.date[4] === '/') day.date = day.date.slice(0 , 7);
-        
-    })
+    });
 
   return (
    <>
@@ -64,4 +63,4 @@ const ByDayChart: React.FC = () => {
   );
 };
 
-export default ByDayChart
+export default ByDayChart;

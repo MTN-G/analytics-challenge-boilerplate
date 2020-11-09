@@ -18,25 +18,30 @@ const styleEventDiv = {
 
 type sorting = "+date" | "-date"
 
+type FilterResponse = {
+  more: boolean,
+  events: Event[]
+};
+
 const FilterChart: React.FC = () => {
     const [sorting, setSorting] = useState<sorting>("-date")
     const [type, setType] = useState<eventName | undefined>(undefined)
     const [browser, setBrowser] = useState<browser | undefined>(undefined)
     const [search, setSearch] = useState<string | undefined>(undefined)
     const [offset, setOffset] = useState<number>(10)
-    const [data, setData] = useState<{events: Event[], more: boolean}>({events: [], more: true})
+    const [data, setData] = useState<FilterResponse>()
 
     useEffect(() => {
         async function getEventsByDays () {
-            const {data} = await axios.get(`http://localhost:3001/events/all-filtered`, {
+            const response : FilterResponse = await (await axios.get(`http://localhost:3001/events/all-filtered`, {
                 params: {
-                  sorting: sorting,
+                  sorting,
                   offset,
                   type,
                   browser,
                   search
-                }})
-            setData(data)  
+                }})).data;
+            setData(response)  
         }
         getEventsByDays()
     },[sorting, type, browser, search, offset])
@@ -46,8 +51,6 @@ const FilterChart: React.FC = () => {
         else setState(e.target.value);
         setOffset(10)
     }
-
-    console.log(data)
 
   return (
    <div>
@@ -88,7 +91,7 @@ const FilterChart: React.FC = () => {
             <InfiniteScroll
                     dataLength={offset}
                     next={() => setOffset(prev => prev + 10)}
-                    hasMore={data.more}
+                    hasMore={data?.more!}
                     style={{ display: 'flex', flexDirection: 'column' }}
                     loader={<h4>Loading...</h4>}
                     height={400}
@@ -97,7 +100,7 @@ const FilterChart: React.FC = () => {
                         <b>You have seen all Events</b>
                         </p>}
             >
-            {data.events.map((event, i) => <div style={styleEventDiv}>{`${i + 1}.`}<b>{event.name}</b> by: User {event.distinct_user_id} at {`${new Date(event.date).toLocaleString()}`}</div>)}
+            {data?.events.map((event: Event, i: number) => <div key={`event-${i}`} style={styleEventDiv}><b>{event.name}</b> by: User {event.distinct_user_id} at {`${new Date(event.date).toLocaleString()}`}</div>)}
             </InfiniteScroll>
       </div>
         <RadioGroup aria-label="position" name="position" defaultValue="-date" row>
@@ -116,4 +119,4 @@ const FilterChart: React.FC = () => {
   );
 };
 
-export default FilterChart
+export default FilterChart;
